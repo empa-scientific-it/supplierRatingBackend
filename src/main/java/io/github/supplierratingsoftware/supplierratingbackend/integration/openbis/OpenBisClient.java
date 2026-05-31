@@ -70,7 +70,9 @@ public class OpenBisClient {
     }
 
     /**
-     * Zieht den PAT aus dem Authorization-Header des aktuellen Requests.
+     * Takes the current token from the request header and returns it.
+     * @return The current token from the request header.
+     * @throws OpenBisIntegrationException if no token is found in the request header.
      */
     private String getCurrentToken() {
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
@@ -81,29 +83,35 @@ public class OpenBisClient {
                 return authHeader.substring(7);
             }
         }
-        throw new OpenBisIntegrationException("Kein gültiger PAT im Header gefunden. Bitte loggen Sie sich ein.");
+        throw new OpenBisIntegrationException("No valid PAT found in the Authorization header. Please log in.");
     }
 
     /**
-     * Validiert den PAT und gibt die userId zurück.
+     * Validates a Personal Access Token (PAT) against openBIS and returns the owning user id.
+     * @param pat The Personal Access Token to validate.
+     * @return The user id of the PAT owner.
+     * @throws OpenBisIntegrationException if the PAT is invalid or the user data cannot be loaded.
      */
     public String validatePat(String pat) {
         JsonRpcRequest request = new JsonRpcRequest("getSessionInformation", List.of(pat));
         ParameterizedTypeReference<JsonRpcResponse<Map<String, Object>>> responseType = new ParameterizedTypeReference<>() {};
 
+        JsonRpcResponse<Map<String, Object>> response;
         try {
-            JsonRpcResponse<Map<String, Object>> response = restClient.post().body(request).retrieve().body(responseType);
-            validateResponse(response, "PAT Validierung fehlgeschlagen");
-
-            Map<String, Object> result = response.result();
-            if (result != null && result.containsKey("person")) {
-                Map<String, Object> person = (Map<String, Object>) result.get("person");
-                return person.get("userId").toString();
-            }
-            throw new OpenBisIntegrationException("Benutzerdaten konnten nicht geladen werden.");
+            response = restClient.post().body(request).retrieve().body(responseType);
         } catch (Exception e) {
-            throw new OpenBisIntegrationException("Ungültiger PAT: " + e.getMessage());
+            log.error("PAT validation request failed: {}", e.getMessage());
+            throw new OpenBisIntegrationException("Invalid PAT: " + e.getMessage(), e);
         }
+        validateResponse(response, "PAT validation failed");
+
+        Map<String, Object> result = response.result();
+        if (result == null || !result.containsKey("person")) {
+            log.error("PAT validation returned no user data");
+            throw new OpenBisIntegrationException("User data could not be loaded.");
+        }
+        Map<String, Object> person = (Map<String, Object>) result.get("person");
+        return person.get("userId").toString();
     }
 
     /**
