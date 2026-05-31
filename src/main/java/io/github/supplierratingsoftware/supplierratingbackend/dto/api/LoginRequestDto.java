@@ -3,14 +3,16 @@ package io.github.supplierratingsoftware.supplierratingbackend.dto.api;
 import jakarta.validation.constraints.NotBlank;
 
 /**
- * Dieses Objekt nimmt die Daten vom Login-Formular entgegen.
- * Ein Record ist eine spezielle Klasse. Er erstellt automatisch alles, was man normalerweise mühsam tippen müsste (wie Konstruktoren oder Getter-Methoden). Er ist perfekt für den Datentransport geeignet.
- * (AT)NotBlank: Das ist eine Sicherheitsprüfung. Wenn jemand versucht, sich ohne Benutzernamen anzumelden, stoppt Spring Boot die Anfrage sofort und schickt eine Fehlermeldung zurück.
+ * Represents a login request.
+ * Carries the credentials submitted from the login form.
+ * @param username The user's openBIS username (Mandatory).
+ * @param password The user's openBIS Personal Access Token (PAT),
+ *                 entered in the password field on the frontend (Mandatory).
  */
 public record LoginRequestDto(
-        @NotBlank(message = "Benutzername darf nicht leer sein")
+        @NotBlank(message = "Username is required")
         String username,
 
-        @NotBlank(message = "Bitte geben Sie Ihren Personal Access Token ein")
-        String password  // Dies wird im Frontend als PAT eingegeben
+        @NotBlank(message = "Personal Access Token is required")
+        String password
 ) {}
