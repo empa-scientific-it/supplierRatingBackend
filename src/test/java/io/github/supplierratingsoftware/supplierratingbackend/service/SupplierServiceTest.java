@@ -403,8 +403,6 @@ public class SupplierServiceTest {
 
         OpenBisProperties properties = new OpenBisProperties(
                 DUMMY_API_URL,
-                DUMMY_USER,
-                DUMMY_PASSWORD,
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 orderConfig,
