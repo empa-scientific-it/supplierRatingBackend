@@ -133,18 +133,6 @@ public class OpenBisClientTest {
     // --- JSON Payloads (Requests & Responses) ---
 
     /**
-     * Simulated JSON-RPC success response for a login request.
-     * Contains the session token in the 'result' field.
-     */
-    private static final String LOGIN_SUCCESS_RESPONSE = """
-            {
-              "jsonrpc": "%s",
-              "id": %d,
-              "result": "%s"
-            }
-            """.formatted(JSON_RPC_VERSION, JSON_RPC_ID_1, DUMMY_SESSION_TOKEN);
-
-    /**
      * Simulated JSON-RPC error response for a failed login request.
      * Contains an 'error' object with code and message.
      */
