@@ -76,7 +76,7 @@ public class RatingMapper {
                     supplierId = supplier.permId().permId();
                 }
                 if (supplier != null && supplier.properties() != null) {
-                    supplierName = supplier.properties().get(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY);
+                    supplierName = supplier.properties().get(this.properties.nameProperty());
                 }
             }
         }
