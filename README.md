@@ -269,6 +269,12 @@ The application expects exactly the following identifiers:
 
 > **Note:** Ensure that the created Collections are configured to accept the corresponding Object Types listed above.
 
+#### Step 3: Enable Personal Access Tokens (PAT)
+
+Authentication uses openBIS Personal Access Tokens (see [Section 8](#8-authentication-pat-based-login)).
+Ensure PATs are enabled on your openBIS instance (`personal-access-tokens.enabled = true`) and that each
+user creates a PAT in the openBIS UI (profile → **Personal Access Tokens**) before logging in.
+
 > **Note:** Consult the official [openBIS documentation](https://openbis.readthedocs.io/en/6.x/) for more information
 > on how to configure openBIS properly.
 
@@ -382,7 +388,24 @@ To use this application, you can use any HTTP client (e.g., Curl, Postman, or a 
 requests to the backend.
 The provided endpoints are documented here: [openapi.yaml](openapi.yaml)
 
-## 8. Contributing
+## 8. Authentication (PAT-based Login)
+
+The application uses a **user-centric authentication flow** based on openBIS **Personal Access Tokens (PAT)**.
+
+**How it works:**
+1. The user enters their openBIS username and PAT in the Frontend login form.
+2. The Backend validates the PAT against openBIS using the `getSessionInformation` V3 API call.
+3. If valid, the Backend verifies that the PAT belongs to the entered username.
+4. The PAT is returned to the Frontend and stored as a Bearer token.
+5. All subsequent API requests include the PAT in the `Authorization: Bearer` header,
+   which the Backend uses directly as the openBIS session token.
+
+**Requirements:**
+- openBIS version **20.10.5 or later** (PAT support was introduced in this version).
+- PATs must be enabled on the openBIS instance (`personal-access-tokens.enabled = true`).
+- Each user must create their PAT in the openBIS Admin UI (profile → **Personal Access Tokens**) before logging in.
+
+## 9. Contributing
 
 First off, thank you for considering contributing to the Supplier Rating Backend! 🚀
 
@@ -418,22 +441,6 @@ To keep the codebase clean and maintainable, please keep the following in mind:
 
 Thank you for your support! ❤️
 
-### ✅ Authentication: PAT-based Login (implemented)
-
-The application uses a **User-Centric Authentication Flow** based on openBIS **Personal Access Tokens (PAT)**.
-
-**How it works:**
-1. The user enters their openBIS username and PAT in the Frontend login form.
-2. The Backend validates the PAT against openBIS using the `getSessionInformation` V3 API call.
-3. If valid, the Backend verifies that the PAT belongs to the entered username.
-4. The PAT is returned to the Frontend and stored as a Bearer token.
-5. All subsequent API requests include the PAT in the `Authorization: Bearer` header, which the Backend uses directly as the openBIS session token.
-
-**Requirements:**
-- openBIS version **20.10.5 or later** (PAT support was introduced in this version)
-- PATs must be enabled on the openBIS instance (`personal-access-tokens-enabled = true`)
-- Users must create their PAT in the openBIS UI under their profile settings before logging in
-
-## 9. License
+## 10. License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
