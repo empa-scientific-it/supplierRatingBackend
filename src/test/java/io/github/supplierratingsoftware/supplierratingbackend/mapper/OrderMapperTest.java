@@ -27,6 +27,7 @@ public class OrderMapperTest {
     private static final String DUMMY_SAMPLE_CODE = "Test Sample Code";
 
     // OpenBis DTO values (Order)
+    private static final String DUMMY_NAME_PROPERTY = "$NAME";
     private static final String DUMMY_ORDER_NAME = "Test Order";
     private static final String VALID_EXAMPLE_MAIN_CATEGORY_LABEL = "Beschaffung";
     private static final String VALID_CORRESPONDING_MAIN_CATEGORY_CODE = "BESCHAFFUNG";
@@ -64,8 +65,6 @@ public class OrderMapperTest {
 
     // OpenBIS Properties
     private static final String DUMMY_API_URL = "dummyApiUrl";
-    private static final String DUMMY_USER = "dummyUser";
-    private static final String DUMMY_PASSWORD = "dummyPassword";
     private static final String DEFAULT_SPACE_CODE = "LIEFERANTENBEWERTUNG";
     private static final String FULL_PROJECT_CODE = "/" + DEFAULT_SPACE_CODE + "/" + ORDER_PROJECT_CODE;
     private static final String FULL_COLLECTION_CODE = FULL_PROJECT_CODE + "/" + ORDER_COLLECTION_CODE;
@@ -79,7 +78,7 @@ public class OrderMapperTest {
      */
     private Map<String, String> getFullOpenBisSampleOrderProperties() {
         Map<String, String> properties = new java.util.HashMap<>(Map.of());
-        properties.put(OpenBisSchemaConstants.NAME_ORDER_PROPERTY, DUMMY_ORDER_NAME);
+        properties.put(DUMMY_NAME_PROPERTY, DUMMY_ORDER_NAME);
         properties.put(OpenBisSchemaConstants.MAIN_CATEGORY_ORDER_PROPERTY, VALID_CORRESPONDING_MAIN_CATEGORY_CODE);
         properties.put(OpenBisSchemaConstants.SUB_CATEGORY_ORDER_PROPERTY, VALID_CORRESPONDING_SUB_CATEGORY_CODE);
         properties.put(OpenBisSchemaConstants.DESCRIPTION_ORDER_PROPERTY, DUMMY_ORDER_DETAILS);
@@ -105,7 +104,7 @@ public class OrderMapperTest {
         OpenBisPermId permId = new OpenBisPermId(DUMMY_SUPPLIER_ID);
         OpenBisEntityType entityType = new OpenBisEntityType(SUPPLIER_TYPE_CODE);
         Map<String, String> properties = new java.util.HashMap<>(Map.of());
-        properties.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, DUMMY_SUPPLIER_NAME);
+        properties.put(DUMMY_NAME_PROPERTY, DUMMY_SUPPLIER_NAME);
         return new OpenBisSample(permId, entityType, DUMMY_SAMPLE_CODE, properties, null, null);
     }
 
@@ -117,7 +116,7 @@ public class OrderMapperTest {
     private OpenBisSample getOpenBisSupplierWithNullPermIdAndNullPropertiesSample() {
         OpenBisEntityType entityType = new OpenBisEntityType(SUPPLIER_TYPE_CODE);
         Map<String, String> properties = new java.util.HashMap<>(Map.of());
-        properties.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, null);
+        properties.put(DUMMY_NAME_PROPERTY, null);
         return new OpenBisSample(null, entityType, DUMMY_SAMPLE_CODE, properties, null, null);
     }
 
@@ -378,7 +377,8 @@ public class OrderMapperTest {
                 DEFAULT_SPACE_CODE,
                 null,
                 orderConfig,
-                null
+                null,
+                DUMMY_NAME_PROPERTY
         );
 
         orderMapper = new OrderMapper(properties);
@@ -702,7 +702,7 @@ public class OrderMapperTest {
         SampleCreation result = orderMapper.toOpenBisCreation(dto);
 
         // Assert
-        assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.NAME_ORDER_PROPERTY, DUMMY_ORDER_NAME);
+        assertThat(result.properties()).containsEntry(DUMMY_NAME_PROPERTY, DUMMY_ORDER_NAME);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.ORDER_REASON_ORDER_PROPERTY, DUMMY_ORDER_REASON);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.PURCHASER_ORDER_PROPERTY, DUMMY_PURCHASER);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.ORDER_DATE_ORDER_PROPERTY, DUMMY_ORDER_DATE);
@@ -820,7 +820,7 @@ public class OrderMapperTest {
         SampleUpdate result = orderMapper.toOpenBisUpdate(DUMMY_PERM_ID, dto);
 
         // Assert
-        assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.NAME_ORDER_PROPERTY, DUMMY_ORDER_NAME);
+        assertThat(result.properties()).containsEntry(DUMMY_NAME_PROPERTY, DUMMY_ORDER_NAME);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.ORDER_REASON_ORDER_PROPERTY, DUMMY_ORDER_REASON);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.PURCHASER_ORDER_PROPERTY, DUMMY_PURCHASER);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.ORDER_DATE_ORDER_PROPERTY, DUMMY_ORDER_DATE);

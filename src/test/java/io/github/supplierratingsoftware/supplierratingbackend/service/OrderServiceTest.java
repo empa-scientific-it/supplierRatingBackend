@@ -272,7 +272,8 @@ public class OrderServiceTest {
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 orderConfig,
-                ratingConfig
+                ratingConfig,
+                "$NAME"
         );
 
         orderService = new OrderService(openBisClient, orderMapper, properties);

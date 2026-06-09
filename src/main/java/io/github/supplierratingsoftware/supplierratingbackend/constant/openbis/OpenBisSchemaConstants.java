@@ -11,7 +11,6 @@ public final class OpenBisSchemaConstants {
 
     // Property Codes
     // - Supplier
-    public static final String NAME_SUPPLIER_PROPERTY = "$NAME";
     public static final String CUSTOMER_NUMBER_SUPPLIER_PROPERTY = "KUNDENNUMMER";
     public static final String ADDITION_SUPPLIER_PROPERTY = "LIEFERANTEN_ZUSATZ";
     public static final String STREET_SUPPLIER_PROPERTY = "LIEFERANTEN_STRASSE";
@@ -27,7 +26,6 @@ public final class OpenBisSchemaConstants {
     public static final String CUSTOMER_INFO_SUPPLIER_PROPERTY = "KUNDENINFORMATION";
 
     // - Order
-    public static final String NAME_ORDER_PROPERTY = "$NAME";
     public static final String MAIN_CATEGORY_ORDER_PROPERTY = "BESTELLUNG_HK";
     public static final String SUB_CATEGORY_ORDER_PROPERTY = "BESTELLUNG_UK";
     public static final String DESCRIPTION_ORDER_PROPERTY = "BEZEICHNUNG";

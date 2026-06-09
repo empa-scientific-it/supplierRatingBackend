@@ -70,9 +70,8 @@ public class RatingMapperTest {
     private static final String SUPPLIER_TYPE_CODE = "LIEFERANT";
 
     // OpenBIS Properties
+    private static final String DUMMY_NAME_PROPERTY = "$NAME";
     private static final String DUMMY_API_URL = "dummyApiUrl";
-    private static final String DUMMY_USER = "dummyUser";
-    private static final String DUMMY_PASSWORD = "dummyPassword";
     private static final String DEFAULT_SPACE_CODE = "LIEFERANTENBEWERTUNG";
     private static final String FULL_PROJECT_CODE = "/" + DEFAULT_SPACE_CODE + "/" + RATING_PROJECT_CODE;
     private static final String FULL_COLLECTION_CODE = FULL_PROJECT_CODE + "/" + RATING_COLLECTION_CODE;
@@ -132,7 +131,7 @@ public class RatingMapperTest {
      */
     private Map<String, String> getOpenBisSampleSupplierProperties() {
         Map<String, String> properties = new HashMap<>();
-        properties.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, DUMMY_SUPPLIER_NAME);
+        properties.put(DUMMY_NAME_PROPERTY, DUMMY_SUPPLIER_NAME);
         return properties;
     }
 
@@ -467,7 +466,8 @@ public class RatingMapperTest {
                 DEFAULT_SPACE_CODE,
                 null,
                 null,
-                ratingConfig
+                ratingConfig,
+                DUMMY_NAME_PROPERTY
         );
 
         ratingMapper = new RatingMapper(properties);

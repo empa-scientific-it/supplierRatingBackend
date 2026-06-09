@@ -406,7 +406,8 @@ public class SupplierServiceTest {
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 orderConfig,
-                ratingConfig
+                ratingConfig,
+                "$NAME"
         );
 
         supplierService = new SupplierService(openBisClient, supplierMapper, properties, orderMapper);

@@ -232,7 +232,8 @@ public class RatingServiceTest {
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 orderConfig,
-                ratingConfig
+                ratingConfig,
+                "$NAME"
         );
 
         ratingService = new RatingService(openBisClient, properties, ratingMapper);
