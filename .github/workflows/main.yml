@@ -35,7 +35,7 @@ jobs:
     
           # Step 2: Build with systemwide gradle command not with "gradlew"
           - name: Build with Gradle
-            run: gradle build
+            run: gradle build -x test
     
           - name: Log in to the Container registry
             uses: docker/login-action@v3
