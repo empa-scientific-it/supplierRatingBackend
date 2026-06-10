@@ -7,9 +7,8 @@ spring:
 openbis:
   # Connection Configuration
   api-url: ${OPENBIS_API_URL}
-  user: ${OPENBIS_USER}
-  password: ${OPENBIS_PASSWORD}
   default-space: ${OPENBIS_SPACE}
+  name-property: ${OPENBIS_NAME_PROPERTY:$NAME}
 
   supplier:
     project-code: ${OPENBIS_SUPPLIER_PROJECT}

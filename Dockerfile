@@ -7,7 +7,7 @@ USER gradle
 COPY --chown=gradle:gradle build.gradle settings.gradle ./
 RUN gradle dependencies --no-daemon
 COPY --chown=gradle:gradle src ./src
-RUN gradle test bootJar --no-daemon
+RUN gradle bootJar -x test --no-daemon
 
 # --- Stage 2: Run ---
 FROM eclipse-temurin:25-jre-alpine

@@ -11,8 +11,6 @@ import org.springframework.validation.annotation.Validated;
  * Maps to the prefix "openbis" in application.yaml.
  *
  * @param apiUrl   The URL of the OpenBIS JSON-RPC API (v3).
- * @param user     The OpenBIS username.
- * @param password The OpenBIS password.
  * @param supplier Configuration for supplier entities.
  * @param order    Configuration for order entities.
  * @param rating   Configuration for rating entities.
@@ -22,12 +20,6 @@ import org.springframework.validation.annotation.Validated;
 public record OpenBisProperties(
         @NotBlank(message = "The OpenBIS API URL must not be blank.")
         String apiUrl,
-
-        @NotBlank(message = "The OpenBIS username must not be blank.")
-        String user,
-
-        @NotBlank(message = "The OpenBIS password must not be blank.")
-        String password,
 
         @NotBlank(message = "The default Space must not be blank.")
         String defaultSpace,
@@ -39,7 +31,12 @@ public record OpenBisProperties(
         OpenBisProperties.EntityConfig order,
 
         @Valid
-        OpenBisProperties.EntityConfig rating
+        OpenBisProperties.EntityConfig rating,
+
+        // The property code used for the entity name. Differs per openBIS version
+        // (e.g. "$NAME" in 20.10.x, a custom "NAME" in others), so it is configurable.
+        @NotBlank(message = "The name property code must not be blank.")
+        String nameProperty
         ) {
 
     /**

@@ -884,7 +884,7 @@ assigned to a specific Experiment (Collection).
 
 | API DTO Field    | openBIS Property Code      | Mandatory (Business Rule) |
 |:-----------------|:---------------------------|:--------------------------|
-| `name`           | `NAME`                     | **Yes**                   |
+| `name`           | `$NAME`                    | **Yes**                   |
 | `customerNumber` | `KUNDENNUMMER`             | **Yes**                   |
 | `addition`       | `LIEFERANTEN_ZUSATZ`       | No                        |
 | `street`         | `LIEFERANTEN_STRASSE`      | **Yes**                   |
@@ -929,7 +929,7 @@ assigned to a specific Experiment (Collection).
         },
         "code": "LIEFERANT-550e8400-e29b-41d4-a716-446655440000",
         "properties": {
-          "NAME": "Acme Corp",
+          "$NAME": "Acme Corp",
           "KUNDENNUMMER": "100-200",
           "LIEFERANTEN_ZUSATZ": "Building B",
           "LIEFERANTEN_STRASSE": "Industrial Way 1",
@@ -991,7 +991,7 @@ To link the Order to a Supplier, the `parentIds` list in the JSON payload must c
 
 | API DTO Field   | openBIS Property Code    | Mandatory |
 |:----------------|:-------------------------|:----------|
-| `name`          | `NAME`                   | **Yes**   |
+| `name`          | `$NAME`                  | **Yes**   |
 | `mainCategory`  | `BESTELLUNG_HK`          | No        |
 | `subCategory`   | `BESTELLUNG_UK`          | No        |
 | `details`       | `BEZEICHNUNG`            | No        |
@@ -1048,7 +1048,7 @@ example in the JSON payload below).
            }
         ],
         "properties": {
-          "NAME": "Lab material Q1",
+          "$NAME": "Lab material Q1",
           "BESTELLUNG_HK": "BESCHAFFUNG",
           "BESTELLUNG_UK": "MESSMITTEL",
           "BEZEICHNUNG": "50x Precision scales",
@@ -1229,7 +1229,7 @@ Updates specific properties of an Order (e.g. status, details, dates).
           "permId": "20260102115225220-324"
         },
         "properties": {
-          "NAME": "Updated Order Name",
+          "$NAME": "Updated Order Name",
           "KOMMENTAR": "Updated status via API",
           "LIEFERDATUM": "2026-05-20"
         }

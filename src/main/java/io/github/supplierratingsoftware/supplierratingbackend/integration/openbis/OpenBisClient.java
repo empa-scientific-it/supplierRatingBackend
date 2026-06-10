@@ -12,6 +12,7 @@ import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.result
 import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.search.SampleSearchCriteria;
 import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.update.SampleUpdate;
 import io.github.supplierratingsoftware.supplierratingbackend.exception.OpenBisIntegrationException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.ParameterizedTypeReference;
@@ -20,8 +21,11 @@ import org.springframework.http.MediaType;
 import org.springframework.http.converter.json.JacksonJsonHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Low-level client for communicating with the OpenBIS V3 JSON-RPC API.
@@ -66,51 +70,48 @@ public class OpenBisClient {
     }
 
     /**
-     * NOTE: The Login process is currently a temporary solution until the final login/token process is implemented.
-     * TODO: Implement a final login/token process and replace the temporary solution.
-     * TODO: This would involve a more secure and robust authentication mechanism from the REST-API of this application to OpenBIS.
-     * Logs in to the OpenBIS system using the configured API URL, username, and password.
-     * Sends an HTTP request to the OpenBIS API and retrieves a session token upon successful authentication.
-     *
-     * @return the session token for the logged-in user if the login is successful.
-     * @throws RuntimeException if the login attempt fails or the response contains an error.
+     * Takes the current token from the request header and returns it.
+     * @return The current token from the request header.
+     * @throws OpenBisIntegrationException if no token is found in the request header.
      */
-    public String login() {
-        log.info("Logging in to OpenBIS: {}", properties.apiUrl());
+    private String getCurrentToken() {
+        ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+        if (attributes != null) {
+            HttpServletRequest request = attributes.getRequest();
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                return authHeader.substring(7);
+            }
+        }
+        throw new OpenBisIntegrationException("No valid PAT found in the Authorization header. Please log in.");
+    }
 
-        // NOTE: The logic of getting the username and password will be changed once the final login/token process is implemented.
-        // Create the login request with the configured username and password
-        JsonRpcRequest request = new JsonRpcRequest(OpenBisJsonConstants.LOGIN_METHOD_NAME, List.of(properties.user(), properties.password()));
+    /**
+     * Validates a Personal Access Token (PAT) against openBIS and returns the owning user id.
+     * @param pat The Personal Access Token to validate.
+     * @return The user id of the PAT owner.
+     * @throws OpenBisIntegrationException if the PAT is invalid or the user data cannot be loaded.
+     */
+    public String validatePat(String pat) {
+        JsonRpcRequest request = new JsonRpcRequest("getSessionInformation", List.of(pat));
+        ParameterizedTypeReference<JsonRpcResponse<Map<String, Object>>> responseType = new ParameterizedTypeReference<>() {};
 
-        // Create a ParameterizedTypeReference for the response type
-        // This is needed because the response type is generic
-        // We expect a JsonRpcResponse<String> where the String is the session token
-        ParameterizedTypeReference<JsonRpcResponse<String>> responseType = new ParameterizedTypeReference<>() {};
-
-        // Send the login request
-        JsonRpcResponse<String> response;
+        JsonRpcResponse<Map<String, Object>> response;
         try {
-            // Send the login request and get the session token as a response (String)
             response = restClient.post().body(request).retrieve().body(responseType);
         } catch (Exception e) {
-            log.error("Login request failed: {}", e.getMessage());
-            throw new OpenBisIntegrationException("Login request failed: " + e.getMessage(), e);
+            log.error("PAT validation request failed: {}", e.getMessage());
+            throw new OpenBisIntegrationException("Invalid PAT: " + e.getMessage(), e);
         }
+        validateResponse(response, "PAT validation failed");
 
-        // Validate response
-        validateResponse(response, "Failed to log in to OpenBIS");
-
-        // Check for null session token
-        if (response.result() == null) {
-            log.error("Login request returned `null` session token");
-            throw new OpenBisIntegrationException("Login request returned `null` session token");
+        Map<String, Object> result = response.result();
+        if (result == null || !result.containsKey("person")) {
+            log.error("PAT validation returned no user data");
+            throw new OpenBisIntegrationException("User data could not be loaded.");
         }
-
-        // Success, return session token
-        String sessionToken = response.result();
-        log.info("Successfully logged in to OpenBIS");
-        log.debug("Session token: {}", sessionToken);
-        return sessionToken;
+        Map<String, Object> person = (Map<String, Object>) result.get("person");
+        return person.get("userId").toString();
     }
 
     /**
@@ -122,7 +123,7 @@ public class OpenBisClient {
      */
     public List<OpenBisSample> searchSamples(SampleSearchCriteria criteria, SampleFetchOptions fetchOptions) {
         // Get the session token from the client
-        String sessionToken = login();
+        String sessionToken = getCurrentToken();
 
         // Create the search request payload
         // Order of parameters in V3 API: [sessionToken, criteria, fetchOptions]
@@ -174,7 +175,7 @@ public class OpenBisClient {
         }
 
         // Safety check: Ensure we are logged in
-        String sessionToken = login();
+        String sessionToken = getCurrentToken();
 
         // Prepare Request
         List<Object> params = List.of(sessionToken, samples);
@@ -215,7 +216,7 @@ public class OpenBisClient {
      */
     public void updateSamples(List<SampleUpdate> updates) {
         if (updates == null || updates.isEmpty()) return;
-        String sessionToken = login();
+        String sessionToken = getCurrentToken();
 
         // Create the update request payload
         List<Object> params = List.of(sessionToken, updates);
