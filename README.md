@@ -335,9 +335,9 @@ restarts and lets you attach a debugger. This requires **Java 25**. Start it wit
 green **Run** arrow on `SupplierRatingBackendApplication` in IntelliJ.
 
 > **Note:** When run on the host (not in a container), the backend cannot reach the Docker-internal hostname
-> `openbis-app`. Point `OPENBIS_API_URL` at a host-reachable openBIS address instead (e.g.
-> `https://localhost/openbis/openbis/rmi-application-server-v3.json` via the openBIS ingress), and ensure the
-> self-signed certificate of the local openBIS is trusted.
+> `openbis-app`. Point `OPENBIS_API_URL` at a host-reachable openBIS address instead, e.g.
+> `http://localhost:9090/openbis/openbis/rmi-application-server-v3.json` (the direct openBIS app port, same
+> as the browser URL).
 
 #### 7.2.5. Full-stack / production deployment
 
@@ -363,7 +363,7 @@ The application uses a **user-centric authentication flow** based on openBIS **P
    which the Backend uses directly as the openBIS session token.
 
 **Requirements:**
-- openBIS version **20.10.5 or later** (PAT support was introduced in this version).
+- Requires an openBIS version with Personal Access Token (PAT) support — introduced in the 20.10.x line with **20.10.5**, and also available in the **6.x** early-access line (e.g. the 6.8 image used by the local setup).
 - PATs must be enabled on the openBIS instance (`personal-access-tokens-enabled = true`).
 - Each user must create their PAT in the openBIS Admin UI (profile → **Personal Access Tokens**) before logging in.
 
