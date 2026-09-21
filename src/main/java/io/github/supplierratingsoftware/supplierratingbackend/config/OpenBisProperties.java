@@ -31,7 +31,12 @@ public record OpenBisProperties(
         OpenBisProperties.EntityConfig order,
 
         @Valid
-        OpenBisProperties.EntityConfig rating
+        OpenBisProperties.EntityConfig rating,
+
+        // The property code used for the entity name. Differs per openBIS version
+        // (e.g. "$NAME" in 20.10.x, a custom "NAME" in others), so it is configurable.
+        @NotBlank(message = "The name property code must not be blank.")
+        String nameProperty
         ) {
 
     /**

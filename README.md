@@ -269,112 +269,80 @@ The application expects exactly the following identifiers:
 
 > **Note:** Ensure that the created Collections are configured to accept the corresponding Object Types listed above.
 
+#### Step 3: Enable Personal Access Tokens (PAT)
+
+Authentication uses openBIS Personal Access Tokens (see [Section 8](#8-authentication-pat-based-login)).
+Ensure PATs are enabled on your openBIS instance (`personal-access-tokens-enabled = true`) and that each
+user creates a PAT in the openBIS UI (profile → **Personal Access Tokens**) before logging in.
+
 > **Note:** Consult the official [openBIS documentation](https://openbis.readthedocs.io/en/6.x/) for more information
 > on how to configure openBIS properly.
 
-### 7.2. Installation Instructions
+### 7.2. Installation & Running
 
-To install the application, you can choose between three different ways: From source, as a Docker
-container with CORS enabled, or as a Docker container within a Docker Compose network with an
-Nginx reverse proxy (CORS disabled).
+This backend runs as a Docker container that is **built from source** using the provided `compose.yaml`.
+It connects to an openBIS instance over a shared Docker network.
 
-- **Install from source with Gradle:** If you need to configure the Java code manually (Configuring Schema Constants,
-  etc.). Useful for development purposes.
-- **Install as Docker container:** If you want to use the provided `compose.yml` file and only need to configure the
-  environment variables. Useful for local testing.
-- **Install as Docker container within a Docker Compose network:** If you want to use a preconfigured Docker image
-  (e.g., the one from this repository) within a larger infrastructure. CORS should be disabled when using behind a
-  reverse proxy.
+> **Local development:** This backend needs a running openBIS instance. Start a local openBIS instance first
+> (see the [infrastructure repository](https://github.com/empa-scientific-it/supplierRatingInfrastructure)), then run the backend as described below. The Frontend reaches the
+> backend at `http://localhost:8080`.
 
-#### 7.2.1. Install application from source and run it directly with Gradle
-
-##### 7.2.1.1 Prerequisites
-
-- Java 25
-
-##### 7.2.1.2 Installation (Cloning)
-
-**Clone the Repository:** To configure the source files and run it from source, you need to clone the repository:
-
-```bash
-git clone https://github.com/SupplierRatingSoftware/supplierRatingBackend.git
-```
-
-##### 7.2.1.3 Configuration
-
-**Configure the application:** To configure the application, you can edit the following files:
-
-- `src/main/resources/application.yaml`: If you don't want to run the application in a Docker container, you have to
-  make sure that you either set the needed environment variables yourself or set the properties directly in this file.
-- In the source code inside `src/main/java/io/github/supplierratingsoftware/supplierratingbackend`:
-    - `config.CorsConfig` to edit the allowed Frontend origins.
-    - `constant.api.ValidationConstants` to edit the validation regex patterns for URLs, Dates, and Rating Score ranges.
-    - `constant.openbis.OpenBisSchemaConstants` to edit the openBIS schema codes and vocabulary codes.
-- To enable CORS, set `dev-local` as the active profile in `application.yaml`.
-- To disable CORS, set `prod` as the active profile in `application.yaml`.
-
-##### 7.2.1.4 Build / Run
-
-**To build and run the application from source:** Run the following commands from within the repository:
-
-```bash
-./gradlew clean build
-./gradlew bootRun
-```
-
-#### 7.2.2. Install and run application as Docker container
-
-##### 7.2.2.1 Prerequisites
+#### 7.2.1. Prerequisites
 
 - Docker
 - Docker Compose
 
-##### 7.2.2.2 Installation (Pulling)
+#### 7.2.2. Clone and configure
 
-**A) If you want to configure more than just the environment variables:** Follow the steps
-in [Section 7.2.1](#721-install-application-from-source-and-run-it-directly-with-gradle) to clone the repo
-and edit the source files. But instead of editing the `application.yaml` file, you have to edit the `.env-development`
-file (see below).
-
-**B) If you want to use the provided Docker image:** Run the following command to pull the image:
+1. Clone the repository:
 
 ```bash
-docker pull ghcr.io/supplierratingsoftware/supplierratingbackend:latest
+git clone https://github.com/empa-scientific-it/supplierRatingBackend.git
 ```
 
-##### 7.2.2.3 Configuration
-
-**A) If you cloned the repository:** For additional configuration, see the instructions
-above(see [Section 7.2.1](#721-install-application-from-source-and-run-it-directly-with-gradle)).
-
-**B) If you pulled the Docker image directly:**
-
-1. Create a `.env-development` file to configure the environment variables (you can download the `.env-example` file
-   from the repo and rename it).
-2. To enable CORS, ensure the `SPRING_PROFILE_ACTIVE` variable is set to `dev-local` in the file.
-3. To disable CORS, set it to `prod`.
-
-##### 7.2.2.4 Run
-
-**A) To run the application configured from source in a Docker container:** Run the following command from within the
-repository:
+2. Create the environment file that `compose.yaml` reads (copy `.env.example` and rename it):
 
 ```bash
-docker compose up --build
+cp .env.example .env.development
 ```
 
-**B) To run the application from the provided Docker image:** You must pass the environment file to the container:
+3. Set the variables in `.env.development`:
+    - `OPENBIS_API_URL` - your local openBIS, reachable container-to-container, e.g.
+      `http://openbis-app:8080/openbis/openbis/rmi-application-server-v3.json`
+    - `SPRING_PROFILE_ACTIVE=dev-local` - enables CORS for the Frontend dev server
+    - `OPENBIS_NAME_PROPERTY` - `NAME` for a local openBIS 6.8 instance, or `$NAME` for openBIS 20.10.x (the default)
+    - The openBIS space, project, type and collection codes (see `.env.example` for the full list)
+
+#### 7.2.3. Run
+
+Build and start the container from within the repository:
 
 ```bash
-docker run --env-file .env-development -p 8080:8080 ghcr.io/supplierratingsoftware/supplierratingbackend:latest
+docker compose up -d --build
 ```
 
-#### 7.2.3. Install application as Docker container within a Docker Compose network behind a reverse proxy
+The backend is then available at `http://localhost:8080`. Make sure your local openBIS instance is already
+running, because the backend joins its shared Docker network (`openbis-shared-network`).
 
-1. Follow the steps above to get the Backend Docker image.
-2. Follow the steps above to disable CORS.
-3. Follow the detailed instructions on
-   the [Supplierrating Infrastructure Repo](https://github.com/SupplierRatingSoftware/supplierRatingInfrastructure).
+> **Tip:** Use `--build` on the first run and whenever you change the backend code - it rebuilds the image.
+> If nothing changed, `docker compose up -d` (without `--build`) is enough and starts faster, because it
+> reuses the existing image.
+
+#### 7.2.4. Running from source (for debugging)
+
+For active backend development you can also run the application directly on your machine, which gives faster
+restarts and lets you attach a debugger. This requires **Java 25**. Start it with `./gradlew bootRun`, or use the
+green **Run** arrow on `SupplierRatingBackendApplication` in IntelliJ.
+
+> **Note:** When run on the host (not in a container), the backend cannot reach the Docker-internal hostname
+> `openbis-app`. Point `OPENBIS_API_URL` at a host-reachable openBIS address instead, e.g.
+> `http://localhost:9090/openbis/openbis/rmi-application-server-v3.json` (the direct openBIS app port, same
+> as the browser URL).
+
+#### 7.2.5. Full-stack / production deployment
+
+For running the complete stack (Frontend, Backend, and a local openBIS instance) and for production deployment,
+see the dedicated [infrastructure repository](https://github.com/empa-scientific-it/supplierRatingInfrastructure).
 
 ### 7.3 Usage
 
@@ -382,7 +350,27 @@ To use this application, you can use any HTTP client (e.g., Curl, Postman, or a 
 requests to the backend.
 The provided endpoints are documented here: [openapi.yaml](openapi.yaml)
 
-## 8. Contributing
+## 8. Authentication (PAT-based Login)
+
+The application uses a **user-centric authentication flow** based on openBIS **Personal Access Tokens (PAT)**.
+
+**How it works:**
+1. The user enters their openBIS username and PAT in the Frontend login form.
+2. The Backend validates the PAT against openBIS using the `getSessionInformation` V3 API call.
+3. If valid, the Backend verifies that the PAT belongs to the entered username.
+4. The PAT is returned to the Frontend and stored as a Bearer token.
+5. All subsequent API requests include the PAT in the `Authorization: Bearer` header,
+   which the Backend uses directly as the openBIS session token.
+
+**Requirements:**
+- Requires an openBIS version with Personal Access Token (PAT) support — introduced in the 20.10.x line with **20.10.5**, and also available in the **6.x** early-access line (e.g. the 6.8 image used by the local setup).
+- PATs must be enabled on the openBIS instance (`personal-access-tokens-enabled = true`).
+- Each user must create their PAT in the openBIS Admin UI (profile → **Personal Access Tokens**) before logging in.
+
+> **Setting up PATs on openBIS** (enabling them, setting the maximum validity period, and creating a token) is
+> described in the [infrastructure repository](https://github.com/empa-scientific-it/supplierRatingInfrastructure).
+
+## 9. Contributing
 
 First off, thank you for considering contributing to the Supplier Rating Backend! 🚀
 
@@ -418,22 +406,6 @@ To keep the codebase clean and maintainable, please keep the following in mind:
 
 Thank you for your support! ❤️
 
-### ✅ Authentication: PAT-based Login (implemented)
-
-The application uses a **User-Centric Authentication Flow** based on openBIS **Personal Access Tokens (PAT)**.
-
-**How it works:**
-1. The user enters their openBIS username and PAT in the Frontend login form.
-2. The Backend validates the PAT against openBIS using the `getSessionInformation` V3 API call.
-3. If valid, the Backend verifies that the PAT belongs to the entered username.
-4. The PAT is returned to the Frontend and stored as a Bearer token.
-5. All subsequent API requests include the PAT in the `Authorization: Bearer` header, which the Backend uses directly as the openBIS session token.
-
-**Requirements:**
-- openBIS version **20.10.5 or later** (PAT support was introduced in this version)
-- PATs must be enabled on the openBIS instance (`personal-access-tokens-enabled = true`)
-- Users must create their PAT in the openBIS UI under their profile settings before logging in
-
-## 9. License
+## 10. License
 
 This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
