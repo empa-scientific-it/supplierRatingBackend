@@ -52,7 +52,7 @@ public class OrderMapper {
             OpenBisSample parent = sample.parents().getFirst();
             if (parent.permId() != null) supplierId = parent.permId().permId();
             if (parent.properties() != null) {
-                supplierName = parent.properties().get(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY);
+                supplierName = parent.properties().get(properties.nameProperty());
             }
         }
 
@@ -95,7 +95,7 @@ public class OrderMapper {
         }
 
         return new OrderDetailDto(
-                props.get(OpenBisSchemaConstants.NAME_ORDER_PROPERTY),
+                props.get(properties.nameProperty()),
                 mainCategory,
                 subCategory,
                 props.get(OpenBisSchemaConstants.DESCRIPTION_ORDER_PROPERTY),
@@ -158,7 +158,7 @@ public class OrderMapper {
         Map<String, String> props = new HashMap<>();
 
         // Mandatory
-        props.put(OpenBisSchemaConstants.NAME_ORDER_PROPERTY, dto.name());
+        props.put(properties.nameProperty(), dto.name());
         props.put(OpenBisSchemaConstants.MAIN_CATEGORY_ORDER_PROPERTY, mainCategoryCode);
         props.put(OpenBisSchemaConstants.SUB_CATEGORY_ORDER_PROPERTY, subCategoryCode);
         props.put(OpenBisSchemaConstants.ORDER_REASON_ORDER_PROPERTY, dto.reason());
@@ -213,7 +213,7 @@ public class OrderMapper {
         Map<String, String> props = new HashMap<>();
 
         // Mandatory Fields (Enforced by @NotBlank in DTO)
-        props.put(OpenBisSchemaConstants.NAME_ORDER_PROPERTY, dto.name());
+        props.put(properties.nameProperty(), dto.name());
         props.put(OpenBisSchemaConstants.MAIN_CATEGORY_ORDER_PROPERTY, mainCategoryCode);
         props.put(OpenBisSchemaConstants.SUB_CATEGORY_ORDER_PROPERTY, subCategoryCode);
         props.put(OpenBisSchemaConstants.ORDER_REASON_ORDER_PROPERTY, dto.reason());

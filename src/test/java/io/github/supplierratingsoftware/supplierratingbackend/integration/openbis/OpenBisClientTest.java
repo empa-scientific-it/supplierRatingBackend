@@ -32,6 +32,10 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.method;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.requestTo;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
+import org.junit.jupiter.api.AfterEach;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
 
 /**
  * Integration tests for the {@link OpenBisClient}.
@@ -72,10 +76,7 @@ public class OpenBisClientTest {
 
     // --- Constants ---
     private static final String DUMMY_API_URL = "https://mock-openbis-server.local/openbis/api/v3";
-    private static final String DUMMY_USER = "dummy-user";
-    private static final String DUMMY_PASSWORD = "dummy-password";
     private static final String DUMMY_SESSION_TOKEN = "test-session-token-123";
-
     private static final MediaType JSON_RPC_MEDIA_TYPE = MediaType.parseMediaType("application/json-rpc");
 
     // --- JSON Path Constants ---
@@ -109,10 +110,15 @@ public class OpenBisClientTest {
     private static final String CREATED_PERM_ID = "20230101-101";
 
     // --- JSON RPC Methods ---
-    private static final String LOGIN_METHOD = "login";
     private static final String SEARCH_METHOD = "searchSamples";
     private static final String CREATE_METHOD = "createSamples";
     private static final String UPDATE_METHOD = "updateSamples";
+
+    // --- PAT Validation Constants ---
+    private static final String GET_SESSION_INFO_METHOD = "getSessionInformation";
+    private static final String DUMMY_PAT = "test-pat-abc-123";
+    private static final String PAT_VALIDATION_FAILED_MESSAGE = "PAT validation failed";
+    private static final String EXPECTED_PAT_OWNER_ID = "dummy-user";
 
     // --- JSON RPC Response Error Messages ---
     private static final String LOGIN_FAILED_MESSAGE = "Login failed";
@@ -125,18 +131,6 @@ public class OpenBisClientTest {
     private static final String TYPE_PROPERTY_FETCH_OPTIONS = "as.dto.property.fetchoptions.PropertyFetchOptions";
 
     // --- JSON Payloads (Requests & Responses) ---
-
-    /**
-     * Simulated JSON-RPC success response for a login request.
-     * Contains the session token in the 'result' field.
-     */
-    private static final String LOGIN_SUCCESS_RESPONSE = """
-            {
-              "jsonrpc": "%s",
-              "id": %d,
-              "result": "%s"
-            }
-            """.formatted(JSON_RPC_VERSION, JSON_RPC_ID_1, DUMMY_SESSION_TOKEN);
 
     /**
      * Simulated JSON-RPC error response for a failed login request.
@@ -153,6 +147,22 @@ public class OpenBisClientTest {
               }
             }
             """.formatted(JSON_RPC_VERSION, JSON_RPC_ID_1, JSON_RPC_ERROR_CODE, LOGIN_FAILED_MESSAGE);
+
+    /**
+     * Simulated JSON-RPC success response for a PAT validation request.
+     * Contains the owning user's id under result.person.userId.
+     */
+    private static final String VALIDATE_PAT_SUCCESS_RESPONSE = """
+        {
+          "jsonrpc": "%s",
+          "id": %d,
+          "result": {
+            "person": {
+              "userId": "%s"
+            }
+          }
+        }
+        """.formatted(JSON_RPC_VERSION, JSON_RPC_ID_1, EXPECTED_PAT_OWNER_ID);
 
     /**
      * Simulated JSON-RPC success response for a search request.
@@ -261,55 +271,21 @@ public class OpenBisClientTest {
     @BeforeEach
     void setUp() {
         server.reset();
+
+        // Simulate an HTTP request carrying an Authorization header,
+        // so getCurrentToken() finds the PAT and no longer throws.
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.addHeader("Authorization", "Bearer " + DUMMY_SESSION_TOKEN);
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
     }
 
-    // --- Tests ---
-
-    /*
-     * Verifies that {@link OpenBisClient#login()} successfully sends a valid JSON-RPC request
-     * and correctly extracts the session token from the response.
-     */
-    /*
-    @Test
-    void login_shouldReturnSessionToken_whenCredentialsAreValid() {
-
-        // Arrange
-        server.expect(requestTo(DUMMY_API_URL))
-                .andExpect(method(POST))
-                .andExpect(jsonPath(JSON_RPC_VERSION_PATH, is(JSON_RPC_VERSION)))
-                .andExpect(jsonPath(JSON_METHOD_PATH, is(LOGIN_METHOD)))
-                .andExpect(jsonPath(JSON_PARAMS_0_PATH, is(DUMMY_USER)))
-                .andExpect(jsonPath(JSON_PARAMS_1_PATH, is(DUMMY_PASSWORD)))
-                .andExpect(jsonPath(JSON_ID_PATH, notNullValue()))
-                .andRespond(withSuccess(LOGIN_SUCCESS_RESPONSE, JSON_RPC_MEDIA_TYPE));
-
-        // Act
-        String token = openBisClient.login();
-
-        // Assert
-        assertThat(token).isEqualTo(DUMMY_SESSION_TOKEN);
-        server.verify();
+    // Reset the simulated request context after each test
+    // so it does not leak into other tests.
+    @AfterEach
+    void tearDown() {
+        RequestContextHolder.resetRequestAttributes();
     }
-    */
-    /*
-     * Verifies that {@link OpenBisClient#login()} throws an {@link OpenBisIntegrationException}
-     * when the OpenBIS server returns a JSON-RPC error object (e.g. invalid credentials).
-     */
-    /*
-    @Test
-    void login_shouldThrowException_whenOpenBisReturnsError() {
 
-        // Arrange
-        server.expect(requestTo(DUMMY_API_URL))
-                .andExpect(method(POST))
-                .andRespond(withSuccess(LOGIN_ERROR_RESPONSE, JSON_RPC_MEDIA_TYPE));
-
-        // Act & Assert
-        assertThatThrownBy(() -> openBisClient.login())
-                .isInstanceOf(OpenBisIntegrationException.class)
-                .hasMessageContaining(LOGIN_FAILED_MESSAGE);
-    }
-    */
     /**
      * Verifies that {@link OpenBisClient#searchSamples(SampleSearchCriteria, SampleFetchOptions)}
      * performs the following actions:
@@ -332,13 +308,7 @@ public class OpenBisClientTest {
                 null
         );
 
-        // Expectation 1: Login Request (Implicitly called)
-        server.expect(requestTo(DUMMY_API_URL))
-                .andExpect(method(POST))
-                .andExpect(jsonPath(JSON_METHOD_PATH, is(LOGIN_METHOD)))
-                .andRespond(withSuccess(LOGIN_SUCCESS_RESPONSE, JSON_RPC_MEDIA_TYPE));
-
-        // Expectation 2: Search Request
+        // Expectation: Search Request
         server.expect(requestTo(DUMMY_API_URL))
                 .andExpect(method(POST))
                 .andExpect(jsonPath(JSON_METHOD_PATH, is(SEARCH_METHOD)))
@@ -368,13 +338,7 @@ public class OpenBisClientTest {
         // Arrange
         SampleCreation creation = createDummySampleCreation();
 
-        // Expectation 1: Login
-        server.expect(requestTo(DUMMY_API_URL))
-                .andExpect(method(POST))
-                .andExpect(jsonPath(JSON_METHOD_PATH, is(LOGIN_METHOD)))
-                .andRespond(withSuccess(LOGIN_SUCCESS_RESPONSE, JSON_RPC_MEDIA_TYPE));
-
-        // Expectation 2: Create Request
+        // Expectation: Create Request
         server.expect(requestTo(DUMMY_API_URL))
                 .andExpect(method(POST))
                 .andExpect(jsonPath(JSON_METHOD_PATH, is(CREATE_METHOD)))
@@ -401,13 +365,8 @@ public class OpenBisClientTest {
         // Arrange
         SampleUpdate update = createDummySampleUpdate();
 
-        // Expectation 1: Login
-        server.expect(requestTo(DUMMY_API_URL))
-                .andExpect(method(POST))
-                .andExpect(jsonPath(JSON_METHOD_PATH, is(LOGIN_METHOD)))
-                .andRespond(withSuccess(LOGIN_SUCCESS_RESPONSE, JSON_RPC_MEDIA_TYPE));
 
-        // Expectation 2: Update Request
+        // Expectation: Update Request
         server.expect(requestTo(DUMMY_API_URL))
                 .andExpect(method(POST))
                 .andExpect(jsonPath(JSON_METHOD_PATH, is(UPDATE_METHOD)))
@@ -420,5 +379,45 @@ public class OpenBisClientTest {
 
         // Assert
         server.verify();
+    }
+
+    /**
+     * Verifies that {@link OpenBisClient#validatePat(String)} sends the PAT to openBIS
+     * and returns the owning user id when the token is valid.
+     */
+    @Test
+    void validatePat_shouldReturnUserId_whenPatIsValid() {
+
+        // Arrange: the server expects a "getSessionInformation" request carrying the PAT
+        server.expect(requestTo(DUMMY_API_URL))
+                .andExpect(method(POST))
+                .andExpect(jsonPath(JSON_METHOD_PATH, is(GET_SESSION_INFO_METHOD)))
+                .andExpect(jsonPath(JSON_PARAMS_0_PATH, is(DUMMY_PAT)))
+                .andRespond(withSuccess(VALIDATE_PAT_SUCCESS_RESPONSE, JSON_RPC_MEDIA_TYPE));
+
+        // Act
+        String userId = openBisClient.validatePat(DUMMY_PAT);
+
+        // Assert
+        assertThat(userId).isEqualTo(EXPECTED_PAT_OWNER_ID);
+        server.verify();
+    }
+
+    /**
+     * Verifies that {@link OpenBisClient#validatePat(String)} throws an
+     * {@link OpenBisIntegrationException} when openBIS returns a JSON-RPC error.
+     */
+    @Test
+    void validatePat_shouldThrowException_whenOpenBisReturnsError() {
+
+        // Arrange: reuse the generic JSON-RPC error response
+        server.expect(requestTo(DUMMY_API_URL))
+                .andExpect(method(POST))
+                .andRespond(withSuccess(LOGIN_ERROR_RESPONSE, JSON_RPC_MEDIA_TYPE));
+
+        // Act & Assert
+        assertThatThrownBy(() -> openBisClient.validatePat(DUMMY_PAT))
+                .isInstanceOf(OpenBisIntegrationException.class)
+                .hasMessageContaining(PAT_VALIDATION_FAILED_MESSAGE);
     }
 }

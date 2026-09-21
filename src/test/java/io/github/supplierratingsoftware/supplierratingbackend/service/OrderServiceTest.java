@@ -269,12 +269,11 @@ public class OrderServiceTest {
 
         properties = new OpenBisProperties(
                 DUMMY_API_URL,
-                DUMMY_USER,
-                DUMMY_PASSWORD,
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 orderConfig,
-                ratingConfig
+                ratingConfig,
+                "$NAME"
         );
 
         orderService = new OrderService(openBisClient, orderMapper, properties);

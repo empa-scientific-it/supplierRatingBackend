@@ -61,7 +61,7 @@ public class SupplierMapper {
         String country = OpenBisSchemaConstants.SUPPLIER_COUNTRY_MAPPING_CODE_TO_LABEL.getOrDefault(rawCountry, rawCountry);
 
         return new SupplierDetailDto(
-                props.get(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY),
+                props.get(properties.nameProperty()),
                 props.get(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY),
                 props.get(OpenBisSchemaConstants.ADDITION_SUPPLIER_PROPERTY),
                 props.get(OpenBisSchemaConstants.STREET_SUPPLIER_PROPERTY),
@@ -121,7 +121,7 @@ public class SupplierMapper {
         Map<String, String> props = new HashMap<>();
 
         // Mandatory fields
-        props.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, dto.name());
+        props.put(properties.nameProperty(), dto.name());
         props.put(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY, dto.customerNumber());
         props.put(OpenBisSchemaConstants.STREET_SUPPLIER_PROPERTY, dto.street());
         props.put(OpenBisSchemaConstants.COUNTRY_SUPPLIER_PROPERTY, countryCode);
@@ -168,7 +168,7 @@ public class SupplierMapper {
         Map<String, String> props = new HashMap<>();
 
         // Mandatory Fields (enforced by @NotBlank in DTO)
-        props.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, dto.name());
+        props.put(properties.nameProperty(), dto.name());
         props.put(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY, dto.customerNumber());
         props.put(OpenBisSchemaConstants.STREET_SUPPLIER_PROPERTY, dto.street());
         props.put(OpenBisSchemaConstants.COUNTRY_SUPPLIER_PROPERTY, countryCode);

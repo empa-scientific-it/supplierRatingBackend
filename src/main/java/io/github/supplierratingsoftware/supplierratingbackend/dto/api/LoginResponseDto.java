@@ -1,8 +1,10 @@
 package io.github.supplierratingsoftware.supplierratingbackend.dto.api;
 
 /**
- * Dieses Objekt wird an das Frontend zurückgeschickt.
- * Es enthält die "Eintrittskarte" (Session-ID in Tokenform) für openBIS.
+ * Represents a login response returned to the frontend.
+ * Contains the session token (the validated openBIS PAT) and the authenticated username.
+ * @param token    The session token used for subsequent openBIS requests (the validated PAT).
+ * @param username The authenticated user's username.
  */
 public record LoginResponseDto(
         String token,

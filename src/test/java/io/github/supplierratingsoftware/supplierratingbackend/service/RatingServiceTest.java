@@ -229,12 +229,11 @@ public class RatingServiceTest {
 
         properties = new OpenBisProperties(
                 DUMMY_API_URL,
-                DUMMY_USER,
-                DUMMY_PASSWORD,
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 orderConfig,
-                ratingConfig
+                ratingConfig,
+                "$NAME"
         );
 
         ratingService = new RatingService(openBisClient, properties, ratingMapper);

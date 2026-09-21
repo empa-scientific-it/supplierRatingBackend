@@ -29,6 +29,7 @@ public class SupplierMapperTest {
     private static final String DUMMY_SAMPLE_CODE = "Test Sample Code";
 
     // OpenBis DTO values (Supplier)
+    private static final String DUMMY_NAME_PROPERTY = "$NAME";
     private static final String DUMMY_SUPPLIER_NAME = "Test Supplier Name";
     private static final String DUMMY_CUSTOMER_NUMBER = "Test Customer Number";
     private static final String DUMMY_ADDITION = "Test Addition";
@@ -89,7 +90,7 @@ public class SupplierMapperTest {
      */
     private Map<String, String> getFullOpenBisSampleSupplierProperties() {
         Map<String, String> properties = new java.util.HashMap<>(Map.of());
-        properties.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, DUMMY_SUPPLIER_NAME);
+        properties.put(DUMMY_NAME_PROPERTY, DUMMY_SUPPLIER_NAME);
         properties.put(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY, DUMMY_CUSTOMER_NUMBER);
         properties.put(OpenBisSchemaConstants.ADDITION_SUPPLIER_PROPERTY, DUMMY_ADDITION);
         properties.put(OpenBisSchemaConstants.STREET_SUPPLIER_PROPERTY, DUMMY_STREET);
@@ -113,7 +114,7 @@ public class SupplierMapperTest {
      */
     private Map<String, String> getOpenBisSampleSupplierPropertiesWithNullValues() {
         Map<String, String> properties = new java.util.HashMap<>(Map.of());
-        properties.put(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, null);
+        properties.put(DUMMY_NAME_PROPERTY, null);
         properties.put(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY, null);
         properties.put(OpenBisSchemaConstants.ADDITION_SUPPLIER_PROPERTY, null);
         properties.put(OpenBisSchemaConstants.STREET_SUPPLIER_PROPERTY, null);
@@ -362,12 +363,11 @@ public class SupplierMapperTest {
 
         OpenBisProperties properties = new OpenBisProperties(
                 DUMMY_API_URL,
-                DUMMY_USER,
-                DUMMY_PASSWORD,
                 DEFAULT_SPACE_CODE,
                 supplierConfig,
                 null,
-                null
+                null,
+                DUMMY_NAME_PROPERTY
         );
 
         supplierMapper = new SupplierMapper(properties);
@@ -744,7 +744,7 @@ public class SupplierMapperTest {
         SampleCreation result = supplierMapper.toOpenBisCreation(dto);
 
         // Assert
-        assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, DUMMY_SUPPLIER_NAME);
+        assertThat(result.properties()).containsEntry(DUMMY_NAME_PROPERTY, DUMMY_SUPPLIER_NAME);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY, DUMMY_CUSTOMER_NUMBER);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.ZIP_CODE_SUPPLIER_PROPERTY, DUMMY_ZIP_CODE);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.CITY_SUPPLIER_PROPERTY, DUMMY_CITY);
@@ -857,7 +857,7 @@ public class SupplierMapperTest {
         SampleUpdate result = supplierMapper.toOpenBisUpdate(DUMMY_PERM_ID, dto);
 
         // Assert
-        assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY, DUMMY_SUPPLIER_NAME);
+        assertThat(result.properties()).containsEntry(DUMMY_NAME_PROPERTY, DUMMY_SUPPLIER_NAME);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.CUSTOMER_NUMBER_SUPPLIER_PROPERTY, DUMMY_CUSTOMER_NUMBER);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.ZIP_CODE_SUPPLIER_PROPERTY, DUMMY_ZIP_CODE);
         assertThat(result.properties()).containsEntry(OpenBisSchemaConstants.CITY_SUPPLIER_PROPERTY, DUMMY_CITY);

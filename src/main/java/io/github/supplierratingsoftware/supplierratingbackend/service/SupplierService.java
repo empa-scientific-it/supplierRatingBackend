@@ -158,7 +158,7 @@ public class SupplierService {
         }
         String supplierId = supplierSample.permId().permId();
         Map<String, String> supplierProperties = supplierSample.properties();
-        String supplierName = supplierProperties != null ? supplierProperties.get(OpenBisSchemaConstants.NAME_SUPPLIER_PROPERTY) : null;
+        String supplierName = supplierProperties != null ? supplierProperties.get(properties.nameProperty()) : null;
 
         // Calculate Stats
         RatingStatsDto stats = calculateStats(supplierSample);
