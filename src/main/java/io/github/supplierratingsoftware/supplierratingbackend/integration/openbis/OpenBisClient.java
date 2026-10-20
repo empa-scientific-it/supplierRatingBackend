@@ -23,9 +23,13 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
+import tools.jackson.databind.node.ObjectNode;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Low-level client for communicating with the OpenBIS V3 JSON-RPC API.
@@ -45,6 +49,9 @@ public class OpenBisClient {
     private static final Logger log = LoggerFactory.getLogger(OpenBisClient.class);
     private final RestClient restClient;
     private final OpenBisProperties properties;
+    // Same JsonMapper as the HTTP message converter, used to turn request parameters into JSON trees
+    // (see createRequest). Reusing it guarantees identical serialization to the actual HTTP request.
+    private final JsonMapper jsonMapper;
 
     /**
      * Constructs an instance of OpenBisClient with the specified RestClient builder and OpenBisProperties.
@@ -60,6 +67,7 @@ public class OpenBisClient {
         // This custom Jackson-Converter handles this case by adding "application/json-rpc" to the list of supported media types
         JacksonJsonHttpMessageConverter converter = new JacksonJsonHttpMessageConverter();
         converter.setSupportedMediaTypes(List.of(MediaType.APPLICATION_JSON, MediaType.parseMediaType(OpenBisJsonConstants.SUPPORTED_MEDIA_TYPE)));
+        this.jsonMapper = converter.getMapper();
 
         // Build the RestClient with the custom Jackson-Converter
         this.restClient = restClientBuilder
@@ -93,7 +101,7 @@ public class OpenBisClient {
      * @throws OpenBisIntegrationException if the PAT is invalid or the user data cannot be loaded.
      */
     public String validatePat(String pat) {
-        JsonRpcRequest request = new JsonRpcRequest("getSessionInformation", List.of(pat));
+        JsonRpcRequest request = createRequest("getSessionInformation", List.of(pat));
         ParameterizedTypeReference<JsonRpcResponse<Map<String, Object>>> responseType = new ParameterizedTypeReference<>() {};
 
         JsonRpcResponse<Map<String, Object>> response;
@@ -127,7 +135,7 @@ public class OpenBisClient {
 
         // Create the search request payload
         // Order of parameters in V3 API: [sessionToken, criteria, fetchOptions]
-        JsonRpcRequest request = new JsonRpcRequest(OpenBisJsonConstants.SEARCH_SAMPLES_METHOD_NAME, List.of(sessionToken, criteria, fetchOptions));
+        JsonRpcRequest request = createRequest(OpenBisJsonConstants.SEARCH_SAMPLES_METHOD_NAME, List.of(sessionToken, criteria, fetchOptions));
 
         // Define the return type of the search request
         // We expect a JsonRpcResponse<OpenBisSearchResult<OpenBisSample>>
@@ -179,7 +187,7 @@ public class OpenBisClient {
 
         // Prepare Request
         List<Object> params = List.of(sessionToken, samples);
-        JsonRpcRequest request = new JsonRpcRequest(OpenBisJsonConstants.CREATE_SAMPLE_METHOD_NAME, params);
+        JsonRpcRequest request = createRequest(OpenBisJsonConstants.CREATE_SAMPLE_METHOD_NAME, params);
 
         // Define Response Type
         ParameterizedTypeReference<JsonRpcResponse<List<SamplePermId>>> responseType = new ParameterizedTypeReference<>() {};
@@ -220,7 +228,7 @@ public class OpenBisClient {
 
         // Create the update request payload
         List<Object> params = List.of(sessionToken, updates);
-        JsonRpcRequest request = new JsonRpcRequest(OpenBisJsonConstants.UPDATE_SAMPLE_METHOD_NAME, params);
+        JsonRpcRequest request = createRequest(OpenBisJsonConstants.UPDATE_SAMPLE_METHOD_NAME, params);
 
         // Define Response Type (OpenBIS returns "result": null for update requests)
         ParameterizedTypeReference<JsonRpcResponse<Void>> responseType = new ParameterizedTypeReference<>() {};
@@ -239,6 +247,53 @@ public class OpenBisClient {
 
         // Validate response
         validateResponse(response, "Failed to update samples");
+    }
+
+    /**
+     * Creates a JSON-RPC request in which every JSON object carrying an {@code @type} also gets an {@code @id}.
+     * <p>
+     * openBIS 7 requires Jackson object ids ({@code @id}) on all typed objects in the request parameters.
+     * Without them, openBIS 7 rejects the request with
+     * {@code -32602 "Failed to read method parameter at index N"}.
+     * The official Python client pyBIS 7 does the same (see {@code assign_jackson_ids}).
+     * openBIS 20.10 accepts the additional ids as well (tested locally with 7.0.0 and 20.10.13.1).
+     * </p>
+     * <p>
+     * Each parameter is first converted into a JSON tree (with the same mapper as the HTTP request),
+     * then the ids are added. Simple values like the session token stay unchanged.
+     * </p>
+     *
+     * @param method The JSON-RPC method to invoke on openBIS.
+     * @param params The method parameters (session token, criteria, fetch options, ...).
+     * @return The request, ready to be sent.
+     */
+    private JsonRpcRequest createRequest(String method, List<Object> params) {
+        List<Object> paramsWithIds = params.stream()
+                .map(param -> {
+                    JsonNode tree = jsonMapper.valueToTree(param);
+                    // Numbering starts at 1 for each parameter (same as pyBIS 7)
+                    assignJacksonIds(tree, new AtomicInteger(1));
+                    return (Object) tree;
+                })
+                .toList();
+        return new JsonRpcRequest(method, paramsWithIds);
+    }
+
+    /**
+     * Recursively assigns a consecutive {@code @id} (1, 2, 3, ...) to every JSON object that has an {@code @type}.
+     *
+     * @param node    The current node in the JSON tree.
+     * @param counter The next free id within the current parameter.
+     */
+    private void assignJacksonIds(JsonNode node, AtomicInteger counter) {
+        // Only JSON objects { ... } with "@type" get an id
+        if (node instanceof ObjectNode objectNode && objectNode.has(OpenBisJsonConstants.TYPE_JSON_PROPERTY_KEY)) {
+            objectNode.put(OpenBisJsonConstants.ID_JSON_PROPERTY_KEY, counter.getAndIncrement());
+        }
+        // Recursion: objects iterate over their values, arrays over their elements
+        for (JsonNode child : node) {
+            assignJacksonIds(child, counter);
+        }
     }
 
     /**
