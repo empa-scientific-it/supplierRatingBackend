@@ -8,6 +8,7 @@ import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.fetcho
 import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.id.SamplePermId;
 import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.result.OpenBisSample;
 import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.search.SampleSearchCriteria;
+import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.search.SpaceSearchCriteria;
 import io.github.supplierratingsoftware.supplierratingbackend.dto.openbis.update.SampleUpdate;
 import io.github.supplierratingsoftware.supplierratingbackend.exception.OpenBisIntegrationException;
 import org.junit.jupiter.api.BeforeEach;
@@ -88,6 +89,14 @@ public class OpenBisClientTest {
     private static final String JSON_PARAMS_1_PATH = "$.params[1]"; // Second JSON-RPC parameter (method-specific payload)
     private static final String JSON_PARAMS_1_OPERATOR_PATH = "$.params[1].operator"; // Criteria Operator (verifies object presence)
     private static final String JSON_PARAMS_2_PROPERTIES_TYPE_PATH = "$.params[2].properties['@type']";
+
+    // --- Jackson Object Id Paths (required by openBIS 7) ---
+    private static final String JSON_PARAMS_1_ID_PATH = "$.params[1]['@id']"; // Root of the search criteria
+    private static final String JSON_PARAMS_1_NESTED_ID_PATH = "$.params[1].criteria[0]['@id']"; // Nested sub-criteria
+    private static final String JSON_PARAMS_2_ID_PATH = "$.params[2]['@id']"; // Root of the fetch options
+    private static final String JSON_PARAMS_2_PROPERTIES_ID_PATH = "$.params[2].properties['@id']"; // Nested fetch option
+    private static final int FIRST_JACKSON_ID = 1; // Numbering starts at 1 for each parameter
+    private static final int SECOND_JACKSON_ID = 2;
 
     // --- JSON RPC Constants ---
     private static final int JSON_RPC_ID_1 = 1;
@@ -325,6 +334,45 @@ public class OpenBisClientTest {
         assertThat(results.size()).isEqualTo(EXPECTED_RESULT_SIZE);
         assertThat(results.getFirst().code()).isEqualTo(SAMPLE_CODE);
 
+        server.verify();
+    }
+
+    /**
+     * Verifies that {@link OpenBisClient#searchSamples(SampleSearchCriteria, SampleFetchOptions)} adds
+     * Jackson object ids ({@code @id}) to every typed object in the request parameters.
+     * <p>
+     * openBIS 7 rejects requests without these ids ("Failed to read method parameter at index N").
+     * The numbering starts at 1 for each parameter, and nested objects get the following numbers.
+     * The session token (a plain string) must stay unchanged.
+     * </p>
+     */
+    @Test
+    void searchSamples_shouldAddJacksonIdsToParameters_forOpenBis7() {
+
+        // Arrange: criteria with one nested sub-criteria, fetch options with one nested fetch option
+        SampleSearchCriteria criteria = SampleSearchCriteria.create()
+                .with(SpaceSearchCriteria.withCode(SAMPLE_CODE));
+        SampleFetchOptions fetchOptions = new SampleFetchOptions(
+                new PropertyFetchOptions(),
+                null,
+                null,
+                null
+        );
+
+        // Expectation: every typed object carries an @id, the token stays a plain string
+        server.expect(requestTo(DUMMY_API_URL))
+                .andExpect(method(POST))
+                .andExpect(jsonPath(JSON_PARAMS_0_PATH, is(DUMMY_SESSION_TOKEN)))
+                .andExpect(jsonPath(JSON_PARAMS_1_ID_PATH, is(FIRST_JACKSON_ID)))
+                .andExpect(jsonPath(JSON_PARAMS_1_NESTED_ID_PATH, is(SECOND_JACKSON_ID)))
+                .andExpect(jsonPath(JSON_PARAMS_2_ID_PATH, is(FIRST_JACKSON_ID)))
+                .andExpect(jsonPath(JSON_PARAMS_2_PROPERTIES_ID_PATH, is(SECOND_JACKSON_ID)))
+                .andRespond(withSuccess(SEARCH_SUCCESS_RESPONSE, JSON_RPC_MEDIA_TYPE));
+
+        // Act
+        openBisClient.searchSamples(criteria, fetchOptions);
+
+        // Assert
         server.verify();
     }
 
